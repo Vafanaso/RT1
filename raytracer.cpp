@@ -20,6 +20,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // [/ignore]
+#include "raytracer.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -223,31 +224,26 @@ Vec3f trace(const Vec3f &rayorig, const Vec3f &raydir,
 // trace it and return a color. If the ray hits a sphere, we return the color of
 // the sphere at the intersection point, else we return the background color.
 //[/comment]
-void render(const std::vector<Sphere> &spheres) {
-  unsigned width = 640, height = 480;
-  Vec3f *image = new Vec3f[width * height], *pixel = image;
+void render(const std::vector<Sphere> &spheres, unsigned char *pixels,
+            int width, int height) {
+  Vec3f *image = new Vec3f[width * height];
   float invWidth = 1 / float(width), invHeight = 1 / float(height);
   float fov = 30, aspectratio = width / float(height);
   float angle = tan(M_PI * 0.5 * fov / 180.);
-  // Trace rays
+
   for (unsigned y = 0; y < height; ++y) {
-    for (unsigned x = 0; x < width; ++x, ++pixel) {
+    for (unsigned x = 0; x < width; ++x) {
       float xx = (2 * ((x + 0.5) * invWidth) - 1) * angle * aspectratio;
       float yy = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
       Vec3f raydir(xx, yy, -1);
       raydir.normalize();
-      *pixel = trace(Vec3f(0), raydir, spheres, 0);
+      Vec3f color = trace(Vec3f(0), raydir, spheres, 0);
+      int index = (y * width + x) * 3;
+      pixels[index] = (unsigned char)(std::min(float(1), color.x) * 255);
+      pixels[index + 1] = (unsigned char)(std::min(float(1), color.y) * 255);
+      pixels[index + 2] = (unsigned char)(std::min(float(1), color.z) * 255);
     }
   }
-  // Save result to a PPM image (keep these flags if you compile under Windows)
-  std::ofstream ofs("./untitled.ppm", std::ios::out | std::ios::binary);
-  ofs << "P6\n" << width << " " << height << "\n255\n";
-  for (unsigned i = 0; i < width * height; ++i) {
-    ofs << (unsigned char)(std::min(float(1), image[i].x) * 255)
-        << (unsigned char)(std::min(float(1), image[i].y) * 255)
-        << (unsigned char)(std::min(float(1), image[i].z) * 255);
-  }
-  ofs.close();
   delete[] image;
 }
 
@@ -263,7 +259,7 @@ int main(int argc, char **argv) {
   spheres.push_back(
       Sphere(Vec3f(0.0, -10004, -20), 10000, Vec3f(0.20, 0.20, 0.20), 0, 0.0));
   spheres.push_back(
-      Sphere(Vec3f(0.0, 0, -20), 4, Vec3f(1.00, 0.32, 0.36), 1, 0.5));
+      Sphere(Vec3f(0.0, 0, -10), 4, Vec3f(1.00, 0.32, 0.36), 1, 0.5));
   spheres.push_back(
       Sphere(Vec3f(5.0, -1, -15), 2, Vec3f(0.90, 0.76, 0.46), 1, 0.0));
   spheres.push_back(

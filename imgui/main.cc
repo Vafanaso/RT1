@@ -35,6 +35,7 @@ int main() {
     ImGui::NewFrame();
 
     // Your GUI code here
+    ImGui::ShowDemoWindow();
     ImGui::Begin("Hello, world!");
     ImGui::Text("This is some text");
     static float x = 0.0f;
